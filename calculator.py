@@ -23,9 +23,10 @@ t_NAME = r'[a-zA-Z_][a-zA-Z0-9_]*'
 
 
 def t_IMAGINARY_NUMBER(t):
-    r'(\d+i)'
-    print(t.value)
-    t.value = float(t.value.replace('i', ''))
+    r'(\d*i)'
+    # value = t.value.replace('i', '')
+    # t.value = float(1 if len(value) == 0 else value)
+    # t.value
     return t
 
 
@@ -92,11 +93,42 @@ def run(p):
 def p_calc(p):
     '''
     calc : expression 
+         | complex_expression
          | var_assign
          | empty
     '''
     result = run(p[1])
     print(result)
+
+
+def p_complex_expression(p):
+    '''
+    complex_expression : IMAGINARY_NUMBER PLUS INT 
+                        | MINUS IMAGINARY_NUMBER PLUS INT
+                        | IMAGINARY_NUMBER PLUS FLOAT
+                        | MINUS IMAGINARY_NUMBER PLUS FLOAT
+                        | IMAGINARY_NUMBER MINUS INT
+                        | MINUS IMAGINARY_NUMBER MINUS INT
+                        | IMAGINARY_NUMBER MINUS FLOAT
+                        | MINUS IMAGINARY_NUMBER MINUS FLOAT
+                        | INT PLUS IMAGINARY_NUMBER
+                        | MINUS INT PLUS IMAGINARY_NUMBER
+                        | FLOAT PLUS IMAGINARY_NUMBER
+                        | MINUS FLOAT PLUS IMAGINARY_NUMBER
+                        | INT MINUS IMAGINARY_NUMBER
+                        | MINUS INT MINUS IMAGINARY_NUMBER
+                        | FLOAT MINUS IMAGINARY_NUMBER
+                        | MINUS FLOAT MINUS IMAGINARY_NUMBER
+    '''
+    pLen = len(p)
+    print("LEN: ", pLen)
+    if(pLen == 5):
+        print(p[1], p[2], p[3], p[4])
+    else:
+        print(p[1], p[2], p[3])
+    # operation = p[2]
+    # p[0] = complex(p[1], -p[3] if operation == '-' else p[3])
+    p[0] = "COMPLEX NUMBER DETECTED"
 
 
 def p_var_assign(p):
