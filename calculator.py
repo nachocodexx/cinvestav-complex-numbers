@@ -63,28 +63,66 @@ precedence = (
     ('left', 'TIMES', 'DIVIDE'),
 )
 
-# dictionary of names (for storing variables)
-names = {}
+# dictionary of enviroment variable (for storing variables)
+enviroment = {}
+
+
+def run(p):
+    if(type(p) == tuple):
+        if(p[0] == "+"):
+            return run(p[1]) + run(p[2])
+        elif(p[0] == "-"):
+            return run(p[1]) - run(p[2])
+        elif(p[0] == "*"):
+            return run(p[1]) * run(p[2])
+        elif(p[0] == '='):
+            enviroment[p[1]] = p[2]
+            return ''
+        else:
+            if p[1] in enviroment:
+                return enviroment[p[1]]
+            else:
+                print("{} not found".format(p[1]))
+                return 0
+
+    else:
+        return p
 
 
 def p_calc(p):
     '''
     calc : expression 
+         | var_assign
          | empty
     '''
-    print(p[1])
+    result = run(p[1])
+    print(result)
+
+
+def p_var_assign(p):
+    '''
+    var_assign : NAME EQUALS expression
+                | NAME EQUALS NAME
+    '''
+    p[0] = ('=', p[1], p[3])
 
 
 def p_expression(p):
     '''
-    expression : expression PLUS expression
+    expression : expression DIVIDE expression
+                | expression TIMES expression
+                | expression PLUS expression
                 | expression MINUS expression 
     '''
-    operation = p[2]
-    if(operation == "+"):
-        p[0] = p[1] + p[3]
-    elif(operation == "-"):
-        p[0] = p[1] - p[3]
+
+    p[0] = (p[2], p[1], p[3])
+
+
+def p_expression_var(p):
+    '''
+    expression : NAME
+    '''
+    p[0] = ("var", p[1])
 
 
 def p_expression_int_float(p):
@@ -104,6 +142,7 @@ def p_empty(p):
 
 def p_error(p):
     print("Syntax error found :c...")
+    return
 
 
 # Yacc
