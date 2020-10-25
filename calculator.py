@@ -4,10 +4,14 @@
 import ply.lex as lex
 import ply.yacc as yacc
 
+
+def finishProcessing(p, result): p[0] = result
+
+
 tokens = (
     'NAME', 'INT', 'FLOAT',
     'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'EQUALS',
-    'LPAREN', 'RPAREN', "IMAGINARY_NUMBER"
+    'LPAREN', 'RPAREN', "IMAGINARY_NUMBER", "IMAGINARY_VARIABLE"
 )
 
 # Tokens
@@ -19,14 +23,16 @@ t_DIVIDE = r'/'
 t_EQUALS = r'='
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
-t_NAME = r'[a-zA-Z_][a-zA-Z0-9_]*'
+t_NAME = r'[a-zA-Z][a-zA-Z0-9]*'
+
+
+def t_IMAGINARY_VARIABLE(t):
+    r'[A-Za-z][A-Za-z]*i'
+    return t
 
 
 def t_IMAGINARY_NUMBER(t):
-    r'(\d*i)'
-    # value = t.value.replace('i', '')
-    # t.value = float(1 if len(value) == 0 else value)
-    # t.value
+    r'[-]?(\d*i)'
     return t
 
 
@@ -62,6 +68,7 @@ lex.lex()
 precedence = (
     ('left', 'PLUS', 'MINUS'),
     ('left', 'TIMES', 'DIVIDE'),
+    ('right', 'UMINUS')
 )
 
 # dictionary of enviroment variable (for storing variables)
@@ -76,8 +83,11 @@ def run(p):
             return run(p[1]) - run(p[2])
         elif(p[0] == "*"):
             return run(p[1]) * run(p[2])
+        elif(p[0] == '/'):
+            return run(p[1]) / run(p[2])
         elif(p[0] == '='):
             enviroment[p[1]] = p[2]
+            print(enviroment)
             return ''
         else:
             if p[1] in enviroment:
@@ -101,40 +111,57 @@ def p_calc(p):
     print(result)
 
 
+def processImaginary(productionRule):
+    productionRuleLength = len(productionRule)
+    isTuple = type(productionRule)
+    productionIndex = 3 if productionRuleLength >= 4 else 1
+    productionExpression = productionRule[productionIndex]
+    imaginaryValue = float(productionExpression.replace('i', ''))
+    real = run(productionRule) if isTuple else float(
+        productionExpression if productionExpression else 0)
+    return complex(real, imaginaryValue)
+
+
 def p_complex_expression(p):
     '''
-    complex_expression : IMAGINARY_NUMBER PLUS INT 
-                        | MINUS IMAGINARY_NUMBER PLUS INT
-                        | IMAGINARY_NUMBER PLUS FLOAT
-                        | MINUS IMAGINARY_NUMBER PLUS FLOAT
-                        | IMAGINARY_NUMBER MINUS INT
-                        | MINUS IMAGINARY_NUMBER MINUS INT
-                        | IMAGINARY_NUMBER MINUS FLOAT
-                        | MINUS IMAGINARY_NUMBER MINUS FLOAT
-                        | INT PLUS IMAGINARY_NUMBER
-                        | MINUS INT PLUS IMAGINARY_NUMBER
-                        | FLOAT PLUS IMAGINARY_NUMBER
-                        | MINUS FLOAT PLUS IMAGINARY_NUMBER
-                        | INT MINUS IMAGINARY_NUMBER
-                        | MINUS INT MINUS IMAGINARY_NUMBER
-                        | FLOAT MINUS IMAGINARY_NUMBER
-                        | MINUS FLOAT MINUS IMAGINARY_NUMBER
+    complex_expression : expression PLUS IMAGINARY_NUMBER
+                        | expression MINUS IMAGINARY_NUMBER
+                        | expression TIMES IMAGINARY_NUMBER
+                        | expression DIVIDE IMAGINARY_NUMBER
+                        | IMAGINARY_NUMBER
     '''
     pLen = len(p)
-    print("LEN: ", pLen)
-    if(pLen == 5):
-        print(p[1], p[2], p[3], p[4])
+
+    if(pLen >= 4):
+        imaginary = float(p[3].replace('i', ''))
+        real = run(p[1]) if type(p[1]) == tuple else float(p[1])
+        p[0] = complex(real, imaginary)
     else:
-        print(p[1], p[2], p[3])
-    # operation = p[2]
-    # p[0] = complex(p[1], -p[3] if operation == '-' else p[3])
-    p[0] = "COMPLEX NUMBER DETECTED"
+        imaginary = float(p[1].replace('i', ''))
+        p[0] = complex(0, imaginary)
+
+
+def p_imaginary(production):
+    '''
+    imaginary : IMAGINARY_VARIABLE
+    '''
+    finishProcessing(production, production[1])
+
+
+def p_complex_equation(production):
+    'complex_expression : expression PLUS imaginary'
+    imaginaryVariableName = production[3].replace('i', '')
+    imaginaryVariableValue = enviroment[imaginaryVariableName]
+    realVariableValue = run(production[1])
+
+    result = complex(realVariableValue, imaginaryVariableValue)
+    finishProcessing(production, result)
 
 
 def p_var_assign(p):
     '''
     var_assign : NAME EQUALS expression
-                | NAME EQUALS NAME
+                | NAME EQUALS complex_expression
     '''
     p[0] = ('=', p[1], p[3])
 
@@ -165,6 +192,16 @@ def p_expression_int_float(p):
     p[0] = p[1]
 
 
+def p_expression_group(p):
+    'expression : LPAREN expression RPAREN'
+    p[0] = p[2]
+
+
+def p_expression_uminus(p):
+    'expression : MINUS expression %prec UMINUS'
+    p[0] = -p[2]
+
+
 def p_empty(p):
     '''
     empty :
@@ -179,9 +216,12 @@ def p_error(p):
 
 # Yacc
 parser = yacc.yacc()
-while True:
+# Variable bool
+isRunning: bool = True
+
+while isRunning:
     try:
         s = input('>> ')
     except EOFError:
-        break
+        isRunning = False
     parser.parse(s)
