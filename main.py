@@ -1,5 +1,8 @@
-# simple calculator with variables.
-# -----------------------------------------------------------------------------
+#
+# Created on Sun Oct 25 2020
+#
+# CINVESTAV (c) 2020 Ignacio Castillo
+#
 
 import ply.lex as lex
 import ply.yacc as yacc
@@ -209,19 +212,38 @@ def p_empty(p):
     p[0] = None
 
 
-def p_error(p):
-    print("Syntax error found :c...")
+# Funcion que se ejecutado cuando el analizador detecta un  error.
+# type: LexToken => Unit
+#
+def p_error(token):
+    print("[SYNTAX_ERROR] found in {}".format(token))
+
     return
 
 
-# Yacc
-parser = yacc.yacc()
-# Variable bool
-isRunning: bool = True
+#
+# Funcion principal del programa
+# type: ()=>Unit
+#
+def program():
+    # LR Parser : Analizador de izquierda a derecha
+    parser: LRParser = yacc.yacc()
+    # variable de control del main loop(ciclo principal)
+    isRunning: bool = True
 
-while isRunning:
-    try:
-        s = input('>> ')
-    except EOFError:
-        isRunning = False
-    parser.parse(s)
+    # Main loop
+    while isRunning:
+        try:
+            # Operacion I/O : Para recibir valores del teclado..
+            s: str = input('>> ')
+
+        except EOFError:
+            isRunning = False
+        #  Analizar los datos que se reciben del teclado.
+        parser.parse(s)
+
+
+# Condicional para ejecutar la funcion program(), si main.py es ejecutado.
+if __name__ == '__main__':
+    # Ejecutar programa
+    program()
