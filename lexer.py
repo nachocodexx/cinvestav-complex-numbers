@@ -24,6 +24,7 @@ class Lexer(object):
         'ID', 'INT', 'FLOAT',
         'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'EQUALS',
         'LEFT_PARENTHESIS', 'RIGHT_PARENTHESIS', 'IMAGINARY_ID', 'IMAGINARY_VARIABLE',
+        'EXIT'
     )
     t_PLUS = r'\+'
     '''
@@ -61,15 +62,17 @@ class Lexer(object):
     token: ID
     '''
 
-    def t_ID(self, t):
+    def t_ID(self, token):
         r'[a-zA-Z][a-zA-Z0-9]*'
-        value = t.value
+        value = token.value
         if(value == 'i'):
-            t.type = "IMAGINARY_ID"
+            token.type = "IMAGINARY_ID"
         elif('i' in value and value[-1] == 'i'):
-            t.value = value.replace('i', '')
-            t.type = "IMAGINARY_VARIABLE"
-        return t
+            token.value = value.replace('i', '')
+            token.type = "IMAGINARY_VARIABLE"
+        elif('exit' == value):
+            token.type = "EXIT"
+        return token
     '''
     Description: Expresion regular para las variables imaginarias
     token: IMAGINARY_ID
@@ -98,35 +101,35 @@ class Lexer(object):
     token: FLOAT
     '''
 
-    def t_FLOAT(self, t):
+    def t_FLOAT(self, token):
         r'\d+\.\d+'
-        t.value = float(t.value)
-        return t
+        token.value = float(token.value)
+        return token
 
     '''
     Description: Expresion regular para detectar numeros enteros (e.g 23,5,6)
     token: INT
     '''
 
-    def t_INT(self, t):
+    def t_INT(self, token):
         r'\d+'
         # print(t)
-        t.value = int(t.value)
-        return t
+        token.value = int(token.value)
+        return token
 
     '''
     Description: contador de lineas
     '''
 
-    def t_newline(self, t):
+    def t_newline(self, token):
         r'\n+'
-        t.lexer.lineno += t.value.count("\n")
+        token.lexer.lineno += token.value.count("\n")
 
     '''
     Description: Controlador de error, esta funcion se ejecuta cuando un caracter no es valido. 
     '''
 
-    def t_error(self, t):
-        print(f"Illegal character {t.value[0]!r}")
+    def t_error(self, token):
+        print(f"Illegal character {token.value[0]!r}")
         # ignora el caracter
-        t.lexer.skip(1)
+        token.lexer.skip(1)

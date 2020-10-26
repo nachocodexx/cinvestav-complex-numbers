@@ -5,12 +5,14 @@
 #
 
 
+import sys
 # Importar Yacc
 from ply import yacc
 # Importa el lexer
 from lexer import Lexer
 # Importar termcolor: libreria para cambiar el color de texto en la terminal
 from termcolor import cprint, colored
+from random import randint
 
 
 '''
@@ -21,6 +23,7 @@ Description: Clase analizador gramatico, se encarga de encapsular toda la funcio
 class Parser(object):
     # Traer los tokens del Lexer
     tokens = Lexer.tokens
+
     # Tupla de precedencia
     precedence = (
         ('left', 'PLUS', 'MINUS'),
@@ -34,25 +37,59 @@ class Parser(object):
                   | var_assign
                   | operations 
                   | printer
+                  | exit_case
                  | empty
         '''
+        # Contador de lineas
+        self.line_counter += 1
         result = self.processProduction(production[1])
-        cprint("= {}".format(result), "white", "on_blue")
+        printeVariable = self.line_counter
+        if(type(result) == complex):
+            self.db.updateVariable('res{}'.format(self.line_counter), result)
+            printeVariable = "res{}".format(self.line_counter)
+
+        cprint("[{1}] {0}".format(
+            result, printeVariable), "white", "on_blue")
         return production
 
     # Production rule para las operaciones con variables.
     def p_operations(self, production):
         '''
-        operations :  ID PLUS ID
-                    | ID MINUS ID
-                    | ID TIMES ID
-                    | ID DIVIDE ID
+        operations :  complex_term PLUS complex_term
+                    | complex_term MINUS complex_term
+                    | complex_term TIMES complex_term
+                    | complex_term DIVIDE complex_term
         '''
         production[0] = (production[2], ('var', production[1]),
                          ('var', production[3]))
         return production
 
+    def p_operations_times(self, production):
+        '''
+        operations : complex_term complex_term
+        '''
+        production[0] = ('*', ('var', production[1]), ('var', production[2]))
+        return production
+
+    def p_complex_term_id(self, production):
+        '''
+        complex_term : ID
+        '''
+        production[0] = production[1]
+        return production
+
+    def p_complex_term_group(self, production):
+        '''
+        complex_term : LEFT_PARENTHESIS complex_expression RIGHT_PARENTHESIS
+        '''
+        variableName = 'HIDDEN_VARIABLE' + str(randint(0, 10000))
+        self.db.updateVariable(variableName, production[2])
+        production[0] = variableName
+
+        return production
+
     # Production rule para los numeros complejos,(e.g 2+1i , a+2i, 1+ai , a+bi)
+
     def p_complex_expression(self, production):
         '''
         complex_expression :  real_expression PLUS term IMAGINARY_ID
@@ -159,6 +196,12 @@ class Parser(object):
         'real_expression : MINUS term %prec UMINUS'
         production[0] = -production[2]
         return production
+
+    def p_exit_case(self, production):
+        '''
+        exit_case : EXIT
+        '''
+        sys.exit()
     # ##########################################################
 
     '''
@@ -179,6 +222,7 @@ class Parser(object):
         self.lexer = Lexer()
         self.lexer.build()
         self.db = db
+        self.line_counter = 0
         self.parser = yacc.yacc(module=self)
 
     '''

@@ -4,7 +4,6 @@
 # CINVESTAV (c) 2020 Ignacio Castillo
 #
 
-# from production_rules import *
 import sys
 import os
 # Importar yacc de la libreria PLY
@@ -14,34 +13,12 @@ from termcolor import colored, cprint
 # Importar todos los tokens
 from lexer import Lexer
 #
-# Importar base de datos en memoria: tinydb
+# Importar base de datos en memoria
 from database import Database
-#
-# from process_production import buildProductionProcess
-#
+# Importar el Parser.
 from parser import Parser
-#
-#
-# processProduction = buildProductionProcess(db, cprint)
-
-'''
-#  Funcion para terminar un shift/reduce
-# (Production, Any)=> Unit
-#
-'''
-def finishProcessing(p, result): p[0] = result
 
 
-# Build the lexer
-# lexer = Lexer()
-# lexer.build()
-
-#
-
-# Precedence rules for the arithmetic operators
-
-
-#
 # Funcion principal del programa
 # type: ()=>Unit
 #
@@ -62,7 +39,6 @@ def program():
         except EOFError:
             isRunning = False
         #  Analizar los datos que se reciben del teclado.
-        # parser.parser.parse(s)
         parser.parse(inputValue)
 
 
