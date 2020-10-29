@@ -250,7 +250,13 @@ class Parser(object):
             elif(production[0] == "*"):
                 return self.processProduction(production[1]) * self.processProduction(production[2])
             elif(production[0] == '/'):
-                return self.processProduction(production[1]) / self.processProduction(production[2])
+                try:
+                    return self.processProduction(production[1]) / self.processProduction(production[2])
+                except ZeroDivisionError as e:
+                    cprint("[ERROR] Complex division by zero",
+                           "white", "on_red")
+                    return None
+                    # return "Complex division by zero"
             elif(production[0] == '='):
                 variableName = production[1]
                 value = production[2]
