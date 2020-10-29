@@ -102,6 +102,17 @@ class Parser(object):
         production[0] = complexNumber
         return production
 
+    def p_complex_expression_negative(self, production):
+        '''
+        complex_expression : real_expression MINUS complex_variable
+        '''
+
+        real = self.processProduction(production[1])
+        imaginary = production[3]
+        complexNumber = complex(real, -imaginary)
+        production[0] = complexNumber
+        return production
+
     # production rule para detectar numeros complejos con variable en la parte imaginaria (e.g 1+bi)
     def p_complex_expression_variable(self, production):
         '''
